@@ -81,10 +81,7 @@ In one terminal:
 
 ```bash
 # With UV:
-uv run python src/worker.py
-
-# With venv (after activation):
-python src/worker.py
+uv run python -m src.worker
 ```
 
 ### Start FastAPI Server
@@ -93,7 +90,7 @@ In another terminal:
 
 ```bash
 # With UV:
-uv run python src/api.py
+uv run fastapi dev src/api.py
 ```
 
 Or using uvicorn directly:
@@ -109,7 +106,7 @@ In a third terminal:
 
 ```bash
 # With UV:
-uv run python src/bot.py
+uv run python -m src.bot
 ```
 
 ## Usage
