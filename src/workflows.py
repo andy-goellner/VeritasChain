@@ -56,9 +56,6 @@ class CivilityRatingWorkflow:
                 start_to_close_timeout=timedelta(seconds=30),
             )
 
-            workflow.logger.info(
-                f"Calculation result: {calculation_result}, Type: {type(calculation_result)}"
-            )
             validation_id = calculation_result.validation_id
             score = calculation_result.score
             metrics = rating_data.metrics
