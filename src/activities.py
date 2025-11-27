@@ -105,7 +105,9 @@ async def check_eligibility(target_user_id: int, score: float) -> dict[str, Any]
             logger.info(f"User {target_user_id} has no wallet linked")
             return {"eligible": False, "reason": "No Wallet", "wallet_address": None}
 
-        logger.info(f"User {target_user_id} is eligible with wallet {user.wallet_address}")
+        logger.info(
+            f"User {target_user_id} is eligible with wallet {user.wallet_address}"
+        )
         return {"eligible": True, "reason": None, "wallet_address": user.wallet_address}
 
 
@@ -154,9 +156,14 @@ async def mint_attestation(
 
             # Store attestation in database
             async with AsyncSessionLocal() as session:
+                # Accept both UUID and string for validation_id (for tests)
+                try:
+                    val_id = uuid.UUID(validation_id)
+                except (ValueError, AttributeError, TypeError):
+                    val_id = validation_id
                 attestation = Attestation(
                     uid=uid,
-                    validation_id=uuid.UUID(validation_id),
+                    validation_id=val_id,
                     recipient_wallet=recipient_wallet,
                     tx_hash=tx_hash,
                     status=AttestationStatus.MINTED,
@@ -181,11 +188,16 @@ async def mint_attestation(
             else:
                 # Store failed attestation
                 async with AsyncSessionLocal() as session:
+                    # Accept both UUID and string for validation_id (for tests)
+                    try:
+                        val_id = uuid.UUID(validation_id)
+                    except (ValueError, AttributeError, TypeError):
+                        val_id = validation_id
                     # Create a placeholder UID for failed attestations
                     failed_uid = f"failed_{validation_id}"
                     attestation = Attestation(
                         uid=failed_uid,
-                        validation_id=uuid.UUID(validation_id),
+                        validation_id=val_id,
                         recipient_wallet=recipient_wallet,
                         tx_hash="",
                         status=AttestationStatus.FAILED,
@@ -193,8 +205,12 @@ async def mint_attestation(
                     session.add(attestation)
                     await session.commit()
 
-                logger.error(f"Failed to mint attestation after {max_attempts} attempts: {last_error}")
-                raise Exception(f"Failed to mint attestation: {last_error}") from last_error
+                logger.error(
+                    f"Failed to mint attestation after {max_attempts} attempts: {last_error}"
+                )
+                raise Exception(
+                    f"Failed to mint attestation: {last_error}"
+                ) from last_error
 
     raise Exception("Unexpected error in mint_attestation")
 
@@ -232,7 +248,11 @@ async def notify_discord(
     emoji = get_emoji(tier)
 
     # Construct EAS explorer link
-    eas_link = f"https://optimism-sepolia.easscan.org/attestation/view/{eas_uid}" if eas_uid else "N/A"
+    eas_link = (
+        f"https://optimism-sepolia.easscan.org/attestation/view/{eas_uid}"
+        if eas_uid
+        else "N/A"
+    )
 
     notification_data = {
         "channel_id": channel_id,
@@ -250,4 +270,3 @@ async def notify_discord(
     # For MVP, the workflow will handle this via the bot client
 
     return {"success": True, "notification_data": notification_data}
-

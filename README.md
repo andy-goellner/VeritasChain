@@ -53,6 +53,7 @@ cp .env.example .env
 ```
 
 Fill in all required values:
+
 - `DISCORD_TOKEN`: Your Discord bot token
 - `DATABASE_URL`: PostgreSQL connection string (Supabase)
 - `PRIVATE_KEY`: Ethereum private key for signing transactions (0x prefix)
@@ -93,9 +94,6 @@ In another terminal:
 ```bash
 # With UV:
 uv run python src/api.py
-
-# With venv (after activation):
-python src/api.py
 ```
 
 Or using uvicorn directly:
@@ -134,6 +132,7 @@ python src/bot.py
 5. Submit the rating
 
 The workflow will:
+
 1. Calculate and store the score
 2. Check eligibility (score >= 3.0 and wallet linked)
 3. Mint an EAS attestation on Optimism Sepolia (if eligible)
@@ -154,9 +153,6 @@ Run tests with pytest:
 ```bash
 # With UV:
 uv run pytest
-
-# With venv (after activation):
-pytest
 ```
 
 Run with coverage:
@@ -164,9 +160,6 @@ Run with coverage:
 ```bash
 # With UV:
 uv run pytest --cov=src tests/
-
-# With venv (after activation):
-pytest --cov=src tests/
 ```
 
 ## Linting
@@ -176,9 +169,6 @@ Check code style with Ruff:
 ```bash
 # With UV:
 uv run ruff check src/
-
-# With venv (after activation):
-ruff check src/
 ```
 
 Auto-fix issues:
@@ -186,9 +176,6 @@ Auto-fix issues:
 ```bash
 # With UV:
 uv run ruff check --fix src/
-
-# With venv (after activation):
-ruff check --fix src/
 ```
 
 ## Project Structure
@@ -221,35 +208,48 @@ This project follows TDD principles. When adding features:
 4. Ensure all code has type hints
 5. Run linter before committing
 
-### Virtual Environment Management
-
-If using venv, here are some helpful commands:
-
-```bash
-# Create virtual environment
-python3 -m venv venv
-
-# Activate (macOS/Linux)
-source venv/bin/activate
-
-# Activate (Windows)
-venv\Scripts\activate
-
-# Deactivate
-deactivate
-
-# Install a new package
-pip install package-name
-
-# Update requirements (if using requirements.txt)
-pip freeze > requirements.txt
-
-# Install from requirements.txt
-pip install -r requirements.txt
-```
-
 **Tip**: Add `venv/` to your `.gitignore` to avoid committing the virtual environment.
 
 ## License
 
 [Add your license here]
+
+## Docker (Local dependencies)
+
+This repository depends on Temporal and a Postgres database (used with Supabase in production). The included `docker-compose.yml` provides a minimal local setup:
+
+- `temporal` - Temporal server (exposes 7233)
+- `temporal-db` - Postgres for Temporal (internal 5432, mapped to host 5433)
+- `supabase-db` - Postgres for app data (internal 5432, mapped to host 5434)
+
+Start the stack:
+
+```bash
+# (from repo root)
+docker compose up -d
+```
+
+Stop the stack:
+
+```bash
+docker compose down -v
+```
+
+Notes:
+
+- The compose file uses simple defaults and example passwords. For local development this is convenient, but do not use these credentials in production.
+- The Temporal image used is `temporalio/auto-setup:1.20.0` which will attempt to initialize its schema against the `temporal-db` Postgres service. If you use a different Temporal version or remote Temporal service, update the `docker-compose.yml` accordingly.
+- The `supabase-db` service is a plain Postgres instance suitable for local development and running migrations from `schema.sql`. If you want the full Supabase ecosystem (auth, realtime, storage), consider using the official Supabase docker setup or the Supabase CLI.
+
+Ports (host -> container):
+
+- Temporal frontend: `localhost:7233` -> `7233`
+- Temporal Postgres: `localhost:5433` -> `5432` (temporal-db)
+- Supabase/Postgres: `localhost:5434` -> `5432` (supabase-db)
+
+After starting the stack, update your `.env` or `DATABASE_URL` for local testing if needed, for example:
+
+```
+DATABASE_URL=postgresql://supabase_admin:supabase_password@localhost:5434/veritaschain
+TEMPORAL_HOST=localhost:7233
+```

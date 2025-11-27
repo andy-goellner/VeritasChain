@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Temporal Postgres database
+  temporal-db:
+    image: postgres:14
+    container_name: veritas_temporal_db
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432" # mapped for local access if needed
+    volumes:
+      - temporal-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Supabase/Postgres (used as the app DB)
+  supabase-db:
+    image: postgres:15
+    container_name: veritas_supabase_db
+    environment:
+      POSTGRES_USER: supabase_admin
+      POSTGRES_PASSWORD: supabase_password
+      POSTGRES_DB: veritaschain
+    ports:
+      - "5434:5432" # mapped so you can connect locally at localhost:5434
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supabase_admin -d veritaschain"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Temporal server (auto-setup image will initialize schema on startup)
+  temporal:
+    image: temporalio/auto-setup:1.20.0
+    container_name: veritas_temporal
+    ports:
+      - "7233:7233" # Temporal frontend
+    environment:
+      # Tell the Temporal server how to reach its Postgres instance.
+      DB: postgresql
+      DB_PORT: 5432
+      DB_HOST: temporal-db
+      DB_USER: temporal
+      DB_PWD: temporal
+    depends_on:
+      temporal-db:
+        condition: service_healthy
+
+volumes:
+  temporal-db-data:
+  supabase-db-data:

@@ -1,9 +1,9 @@
 """Tests for Discord bot."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
+import pytest
 from discord.ext import commands
 
 from src.bot import RatingModal, bot
@@ -19,12 +19,26 @@ async def test_rating_modal_validation() -> None:
 
     modal = RatingModal(target_message=mock_message)
 
-    # Set invalid values
-    modal.clarity.value = "6"  # Out of range
-    modal.respectfulness.value = "4"
-    modal.relevance.value = "3"
-    modal.evidence.value = "4"
-    modal.constructiveness.value = "5"
+    # Set invalid values by mocking the TextInput properties
+    mock_clarity = MagicMock()
+    mock_clarity.value = "6"  # Out of range
+    modal.clarity = mock_clarity
+
+    mock_respectfulness = MagicMock()
+    mock_respectfulness.value = "4"
+    modal.respectfulness = mock_respectfulness
+
+    mock_relevance = MagicMock()
+    mock_relevance.value = "3"
+    modal.relevance = mock_relevance
+
+    mock_evidence = MagicMock()
+    mock_evidence.value = "4"
+    modal.evidence = mock_evidence
+
+    mock_constructiveness = MagicMock()
+    mock_constructiveness.value = "5"
+    modal.constructiveness = mock_constructiveness
 
     mock_interaction = AsyncMock()
     mock_interaction.user.id = 123
@@ -49,12 +63,26 @@ async def test_rating_modal_success() -> None:
 
     modal = RatingModal(target_message=mock_message)
 
-    # Set valid values
-    modal.clarity.value = "5"
-    modal.respectfulness.value = "4"
-    modal.relevance.value = "3"
-    modal.evidence.value = "4"
-    modal.constructiveness.value = "5"
+    # Set valid values by mocking the TextInput properties
+    mock_clarity = MagicMock()
+    mock_clarity.value = "5"
+    modal.clarity = mock_clarity
+
+    mock_respectfulness = MagicMock()
+    mock_respectfulness.value = "4"
+    modal.respectfulness = mock_respectfulness
+
+    mock_relevance = MagicMock()
+    mock_relevance.value = "3"
+    modal.relevance = mock_relevance
+
+    mock_evidence = MagicMock()
+    mock_evidence.value = "4"
+    modal.evidence = mock_evidence
+
+    mock_constructiveness = MagicMock()
+    mock_constructiveness.value = "5"
+    modal.constructiveness = mock_constructiveness
 
     mock_interaction = AsyncMock()
     mock_interaction.user.id = 123
@@ -75,4 +103,3 @@ async def test_rating_modal_success() -> None:
         mock_interaction.response.send_message.assert_called_once()
         call_args = mock_interaction.response.send_message.call_args[0][0]
         assert "submitted successfully" in call_args
-
