@@ -1,7 +1,8 @@
 """Tests for Temporal activities."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from src.activities import (
     calculate_and_store,
@@ -9,6 +10,7 @@ from src.activities import (
     mint_attestation,
     notify_discord,
 )
+from src.data_models import AttestationData, EligibilityCheckData, NotificationData, RatingData
 
 
 @pytest.mark.asyncio
@@ -24,7 +26,7 @@ async def test_calculate_and_store() -> None:
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
 
-        result = await calculate_and_store(
+        rating_data = RatingData(
             validator_id=123,
             target_message_id=456,
             target_user_id=789,
@@ -32,9 +34,10 @@ async def test_calculate_and_store() -> None:
             metrics=[5, 4, 3, 2, 1],
         )
 
-        assert "validation_id" in result
-        assert "score" in result
-        assert result["score"] == 3.0
+        result = await calculate_and_store(rating_data)
+
+        assert result.validation_id
+        assert result.score == 3.0
         assert mock_session.add.call_count == 3  # 2 users + 1 validation
 
 
@@ -45,10 +48,11 @@ async def test_check_eligibility_not_eligible_low_score() -> None:
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
 
-        result = await check_eligibility(target_user_id=789, score=2.5)
+        eligibility_data = EligibilityCheckData(target_user_id=789, score=2.5)
+        result = await check_eligibility(eligibility_data)
 
-        assert result["eligible"] is False
-        assert result["reason"] == "Not Eligible"
+        assert result.eligible is False
+        assert result.reason == "Not Eligible"
 
 
 @pytest.mark.asyncio
@@ -62,10 +66,11 @@ async def test_check_eligibility_no_wallet() -> None:
         mock_user.wallet_address = None
         mock_session.get.return_value = mock_user
 
-        result = await check_eligibility(target_user_id=789, score=4.0)
+        eligibility_data = EligibilityCheckData(target_user_id=789, score=4.0)
+        result = await check_eligibility(eligibility_data)
 
-        assert result["eligible"] is False
-        assert result["reason"] == "No Wallet"
+        assert result.eligible is False
+        assert result.reason == "No Wallet"
 
 
 @pytest.mark.asyncio
@@ -79,18 +84,20 @@ async def test_check_eligibility_eligible() -> None:
         mock_user.wallet_address = "0x1234567890123456789012345678901234567890"
         mock_session.get.return_value = mock_user
 
-        result = await check_eligibility(target_user_id=789, score=4.0)
+        eligibility_data = EligibilityCheckData(target_user_id=789, score=4.0)
+        result = await check_eligibility(eligibility_data)
 
-        assert result["eligible"] is True
-        assert result["wallet_address"] == "0x1234567890123456789012345678901234567890"
+        assert result.eligible is True
+        assert result.wallet_address == "0x1234567890123456789012345678901234567890"
 
 
 @pytest.mark.asyncio
 async def test_mint_attestation_success() -> None:
     """Test mint_attestation activity with successful minting."""
-    with patch("src.activities.EASClient") as mock_eas_client_class, patch(
-        "src.activities.AsyncSessionLocal"
-    ) as mock_session_local:
+    with (
+        patch("src.activities.EASClient") as mock_eas_client_class,
+        patch("src.activities.AsyncSessionLocal") as mock_session_local,
+    ):
         mock_eas_client = MagicMock()
         mock_eas_client.create_attestation.return_value = ("test_uid", "test_tx_hash")
         mock_eas_client_class.return_value = mock_eas_client
@@ -99,7 +106,7 @@ async def test_mint_attestation_success() -> None:
         mock_session_local.return_value.__aenter__.return_value = mock_session
         mock_session.commit = AsyncMock()
 
-        result = await mint_attestation(
+        attestation_data = AttestationData(
             validation_id="test-validation-id",
             recipient_wallet="0x1234567890123456789012345678901234567890",
             score=4.0,
@@ -108,14 +115,16 @@ async def test_mint_attestation_success() -> None:
             message_id=456,
         )
 
-        assert result["uid"] == "test_uid"
-        assert result["tx_hash"] == "test_tx_hash"
+        result = await mint_attestation(attestation_data)
+
+        assert result.uid == "test_uid"
+        assert result.tx_hash == "test_tx_hash"
 
 
 @pytest.mark.asyncio
 async def test_notify_discord() -> None:
     """Test notify_discord activity."""
-    result = await notify_discord(
+    notification_data = NotificationData(
         channel_id=100,
         message_id=456,
         target_user_id=789,
@@ -124,8 +133,9 @@ async def test_notify_discord() -> None:
         api_base_url="http://localhost:8000",
     )
 
-    assert result["success"] is True
-    assert "notification_data" in result
-    assert result["notification_data"]["tier"] == "Gold"
-    assert result["notification_data"]["emoji"] == "🥇"
+    result = await notify_discord(notification_data)
 
+    assert result.success is True
+    assert result.notification_data is not None
+    assert result.notification_data["tier"] == "Gold"
+    assert result.notification_data["emoji"] == "🥇"

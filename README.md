@@ -101,9 +101,6 @@ Or using uvicorn directly:
 ```bash
 # With UV:
 uv run uvicorn src.api:app --host 0.0.0.0 --port 8000
-
-# With venv (after activation):
-uvicorn src.api:app --host 0.0.0.0 --port 8000
 ```
 
 ### Start Discord Bot
@@ -113,9 +110,6 @@ In a third terminal:
 ```bash
 # With UV:
 uv run python src/bot.py
-
-# With venv (after activation):
-python src/bot.py
 ```
 
 ## Usage

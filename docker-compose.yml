@@ -47,12 +47,24 @@ services:
       # Tell the Temporal server how to reach its Postgres instance.
       DB: postgresql
       DB_PORT: 5432
-      DB_HOST: temporal-db
-      DB_USER: temporal
-      DB_PWD: temporal
+      POSTGRES_SEEDS: temporal-db
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
     depends_on:
       temporal-db:
         condition: service_healthy
+
+  # Temporal Web UI
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: veritas_temporal_ui
+    ports:
+      - "8080:8080" # Temporal Web UI
+    environment:
+      # Point the UI at the Temporal frontend service in the compose network
+      TEMPORAL_ADDRESS: temporal:7233
+    depends_on:
+      - temporal
 
 volumes:
   temporal-db-data:

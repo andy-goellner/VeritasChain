@@ -1,21 +1,23 @@
 """Tests for Temporal workflows."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
+from src.data_models import RatingData
 from src.workflows import CivilityRatingWorkflow
 
 
 @pytest.mark.asyncio
 async def test_workflow_successful_path() -> None:
     """Test workflow with successful execution path."""
-    rating_data = {
-        "validator_id": 123,
-        "target_message_id": 456,
-        "target_user_id": 789,
-        "channel_id": 100,
-        "metrics": [5, 4, 3, 4, 4],
-    }
+    rating_data = RatingData(
+        validator_id=123,
+        target_message_id=456,
+        target_user_id=789,
+        channel_id=100,
+        metrics=[5, 4, 3, 4, 4],
+    )
 
     # Mock workflow execution
     with patch("src.workflows.workflow.execute_activity") as mock_execute:
@@ -30,4 +32,3 @@ async def test_workflow_successful_path() -> None:
 
         assert hasattr(CivilityRatingWorkflow, "run")
         assert callable(getattr(CivilityRatingWorkflow, "run"))
-

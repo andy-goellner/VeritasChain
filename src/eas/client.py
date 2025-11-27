@@ -6,7 +6,7 @@ from typing import Any
 from web3 import Web3
 from web3.types import TxReceipt
 
-from src.config import config
+from ..config import config
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,9 @@ class EASClient:
             raise ConnectionError("Failed to connect to Optimism Sepolia RPC")
 
         self.account = self.w3.eth.account.from_key(config.PRIVATE_KEY)
-        self.eas_contract_address = Web3.to_checksum_address(config.EAS_CONTRACT_ADDRESS)
+        self.eas_contract_address = Web3.to_checksum_address(
+            config.EAS_CONTRACT_ADDRESS
+        )
         self.schema_uid = config.EAS_SCHEMA_UID
 
         logger.info(f"EAS Client initialized for {self.eas_contract_address}")
@@ -82,12 +84,32 @@ class EASClient:
                         "name": "data",
                         "type": "tuple",
                         "components": [
-                            {"internalType": "address", "name": "recipient", "type": "address"},
-                            {"internalType": "uint64", "name": "expirationTime", "type": "uint64"},
-                            {"internalType": "bool", "name": "revocable", "type": "bool"},
-                            {"internalType": "bytes32", "name": "refUID", "type": "bytes32"},
+                            {
+                                "internalType": "address",
+                                "name": "recipient",
+                                "type": "address",
+                            },
+                            {
+                                "internalType": "uint64",
+                                "name": "expirationTime",
+                                "type": "uint64",
+                            },
+                            {
+                                "internalType": "bool",
+                                "name": "revocable",
+                                "type": "bool",
+                            },
+                            {
+                                "internalType": "bytes32",
+                                "name": "refUID",
+                                "type": "bytes32",
+                            },
                             {"internalType": "bytes", "name": "data", "type": "bytes"},
-                            {"internalType": "uint256", "name": "value", "type": "uint256"},
+                            {
+                                "internalType": "uint256",
+                                "name": "value",
+                                "type": "uint256",
+                            },
                         ],
                     },
                 ],
@@ -99,14 +121,54 @@ class EASClient:
             {
                 "anonymous": False,
                 "inputs": [
-                    {"indexed": True, "internalType": "bytes32", "name": "uid", "type": "bytes32"},
-                    {"indexed": True, "internalType": "bytes32", "name": "schema", "type": "bytes32"},
-                    {"indexed": False, "internalType": "address", "name": "recipient", "type": "address"},
-                    {"indexed": False, "internalType": "address", "name": "attester", "type": "address"},
-                    {"indexed": False, "internalType": "uint64", "name": "expirationTime", "type": "uint64"},
-                    {"indexed": False, "internalType": "bool", "name": "revocable", "type": "bool"},
-                    {"indexed": False, "internalType": "bytes32", "name": "refUID", "type": "bytes32"},
-                    {"indexed": False, "internalType": "bytes", "name": "data", "type": "bytes"},
+                    {
+                        "indexed": True,
+                        "internalType": "bytes32",
+                        "name": "uid",
+                        "type": "bytes32",
+                    },
+                    {
+                        "indexed": True,
+                        "internalType": "bytes32",
+                        "name": "schema",
+                        "type": "bytes32",
+                    },
+                    {
+                        "indexed": False,
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address",
+                    },
+                    {
+                        "indexed": False,
+                        "internalType": "address",
+                        "name": "attester",
+                        "type": "address",
+                    },
+                    {
+                        "indexed": False,
+                        "internalType": "uint64",
+                        "name": "expirationTime",
+                        "type": "uint64",
+                    },
+                    {
+                        "indexed": False,
+                        "internalType": "bool",
+                        "name": "revocable",
+                        "type": "bool",
+                    },
+                    {
+                        "indexed": False,
+                        "internalType": "bytes32",
+                        "name": "refUID",
+                        "type": "bytes32",
+                    },
+                    {
+                        "indexed": False,
+                        "internalType": "bytes",
+                        "name": "data",
+                        "type": "bytes",
+                    },
                 ],
                 "name": "Attested",
                 "type": "event",
@@ -121,7 +183,9 @@ class EASClient:
         # Remove 0x prefix if present and pad/truncate to 32 bytes
         schema_uid_hex = self.schema_uid.replace("0x", "")
         if len(schema_uid_hex) != 64:
-            raise ValueError(f"Schema UID must be 64 hex characters (32 bytes), got {len(schema_uid_hex)}")
+            raise ValueError(
+                f"Schema UID must be 64 hex characters (32 bytes), got {len(schema_uid_hex)}"
+            )
         schema_uid_bytes = bytes.fromhex(schema_uid_hex)
 
         # Build the attestation data tuple
@@ -138,7 +202,9 @@ class EASClient:
         nonce = self.w3.eth.get_transaction_count(self.account.address)
         gas_price = self.w3.eth.gas_price
 
-        transaction = contract.functions.attest(schema_uid_bytes, attestation_data).build_transaction(
+        transaction = contract.functions.attest(
+            schema_uid_bytes, attestation_data
+        ).build_transaction(
             {
                 "from": self.account.address,
                 "nonce": nonce,
@@ -178,7 +244,9 @@ class EASClient:
                     else:
                         # Fallback: convert to hex string
                         attestation_uid = Web3.to_hex(uid_value)
-                    logger.info(f"Extracted attestation UID from event: {attestation_uid}")
+                    logger.info(
+                        f"Extracted attestation UID from event: {attestation_uid}"
+                    )
                     break
                 except Exception as e:
                     # Not the Attested event, continue searching
@@ -197,4 +265,3 @@ class EASClient:
         logger.info(f"Attestation created: UID={attestation_uid}, TX={tx_hash.hex()}")
 
         return attestation_uid, tx_hash.hex()
-

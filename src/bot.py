@@ -4,11 +4,11 @@ import logging
 from typing import Any
 
 import discord
+import httpx
 from discord import app_commands
 from discord.ext import commands
-import httpx
 
-from src.config import config
+from .config import config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -160,7 +160,9 @@ async def on_ready() -> None:
 
 
 @bot.tree.context_menu(name="Rate Civility")
-async def rate_civility(interaction: discord.Interaction, message: discord.Message) -> None:
+async def rate_civility(
+    interaction: discord.Interaction, message: discord.Message
+) -> None:
     """Context menu command to rate a message's civility."""
     # Validate that the message is not from a bot
     if message.author.bot:
@@ -170,13 +172,13 @@ async def rate_civility(interaction: discord.Interaction, message: discord.Messa
         )
         return
 
-    # Validate that the user is not rating their own message
-    if message.author.id == interaction.user.id:
-        await interaction.response.send_message(
-            "❌ Cannot rate your own message.",
-            ephemeral=True,
-        )
-        return
+    # # Validate that the user is not rating their own message
+    # if message.author.id == interaction.user.id:
+    #     await interaction.response.send_message(
+    #         "❌ Cannot rate your own message.",
+    #         ephemeral=True,
+    #     )
+    #     return
 
     # Show modal
     modal = RatingModal(target_message=message)
@@ -193,4 +195,3 @@ def run_bot() -> None:
 
 if __name__ == "__main__":
     run_bot()
-
